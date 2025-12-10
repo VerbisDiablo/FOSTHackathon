@@ -1,23 +1,9 @@
-# Core Framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
+# Neo4j Connection
+neo4j>=5.14.0
+python-dotenv>=1.0.0
 
-# Graph Database
-neo4j==5.16.0
-
-# LangChain & GraphRAG
-langchain==0.1.4
-langchain-community==0.0.16
-langchain-openai==0.0.5
-
-# Vector Embeddings
-sentence-transformers==2.3.1
-openai==1.10.0
-
-# SQL Database
-sqlalchemy==2.0.25
+# For mcp-neo4j-cypher MCP server
+# Install from: https://github.com/neo4j-labs/mcp-neo4j-cypher
 psycopg2-binary==2.9.9
 sqlite3-python==1.0.0
 
