@@ -42,7 +42,8 @@ class Neo4jConnection:
                     ssl_context=ssl_context,
                     max_connection_lifetime=3600,
                     connection_timeout=60,
-                    connection_acquisition_timeout=60
+                    connection_acquisition_timeout=60,
+                    resolver=None
                 )
                 cls._instance.database = database
                 cls._instance.uri = uri

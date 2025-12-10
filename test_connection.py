@@ -2,22 +2,44 @@
 """
 Diagnostic script to test Neo4j Aura connection
 """
-import os
-from dotenv import load_dotenv
-from neo4j import GraphDatabase
 import ssl
-import time
+from neo4j import GraphDatabase, TRUST_ALL_CERTIFICATES
 
-load_dotenv()
+uri = "bolt://0e343e24.databases.neo4j.io:7687"
+user = "neo4j"
+password = "RE3TbZ7-Snmx0rn-OZ5KEgAwT7Twk8Mb6U64gE-JjQw"
 
-uri = os.getenv("NEO4J_URI")
-username = os.getenv("NEO4J_USER")
-password = os.getenv("NEO4J_PASSWORD")
-database = os.getenv("NEO4J_DATABASE", "neo4j")
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
 
-print(f"Testing connection to: {uri}")
-print(f"Database: {database}")
-print()
+try:
+    print(f"Connecting to {uri}...")
+    driver = GraphDatabase.driver(
+        uri,
+        auth=(user, password),
+        encrypted=True,
+        trust=TRUST_ALL_CERTIFICATES,
+        ssl_context=ssl_context
+    )
+    
+    with driver.session(database="neo4j") as session:
+        result = session.run("MATCH (n) RETURN count(n) as count")
+        count = result.single()["count"]
+        print(f"✓ SUCCESS! Connected to database")
+        print(f"✓ Total nodes: {count}")
+        
+        # Get relationship count
+        rel_result = session.run("MATCH ()-[r]->() RETURN count(r) as count")
+        rel_count = rel_result.single()["count"]
+        print(f"✓ Total relationships: {rel_count}")
+        
+except Exception as e:
+    print(f"✗ Error: {e}")
+    import traceback
+    traceback.print_exc()
+
+
 
 # Try different connection approaches
 attempts = [
