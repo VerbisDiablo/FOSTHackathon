@@ -26,9 +26,20 @@ class Neo4jConnection:
                 raise ValueError("Missing Neo4j credentials in .env file")
 
             try:
+                import ssl
+                from neo4j import TRUST_ALL_CERTIFICATES
+                
+                # Create SSL context that ignores certificate verification
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
                 cls._instance.driver = GraphDatabase.driver(
                     uri, 
                     auth=(username, password),
+                    encrypted=True,
+                    trust=TRUST_ALL_CERTIFICATES,
+                    ssl_context=ssl_context,
                     max_connection_lifetime=3600,
                     connection_timeout=60,
                     connection_acquisition_timeout=60
