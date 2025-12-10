@@ -1,91 +1,53 @@
 """
-Minimal Neo4j connection utility for the mcp-neo4j-cypher server.
+Simple Neo4j connection.
 """
-import ssl
-import os
-from typing import Optional
-from neo4j import GraphDatabase, TRUST_ALL_CERTIFICATES
+from neo4j import GraphDatabase
 from dotenv import load_dotenv
+import os
 
-# Load .env with override to replace system environment variables
 load_dotenv(override=True)
 
-
-class Neo4jConnection:
-    """Simple Neo4j connection manager."""
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            
-            uri = os.getenv("NEO4J_URI")
-            username = os.getenv("NEO4J_USER")
-            password = os.getenv("NEO4J_PASSWORD")
-            database = os.getenv("NEO4J_DATABASE", "neo4j")
-
-            if not all([uri, username, password]):
-                raise ValueError("Missing Neo4j credentials in .env file")
-
-            # Create SSL context that ignores certificate verification
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            
-            try:
-                cls._instance.driver = GraphDatabase.driver(
-                    uri, 
-                    auth=(username, password),
-                    encrypted=True,
-                    trust=TRUST_ALL_CERTIFICATES,
-                    ssl_context=ssl_context,
-                    connection_timeout=60,
-                    connection_acquisition_timeout=60
-                )
-                cls._instance.database = database
-                cls._instance.uri = uri
-                
-                print(f"✓ Neo4j driver created: {uri}")
-                print(f"✓ Database: {database}")
-                    
-            except Exception as e:
-                raise ConnectionError(f"Failed to create Neo4j driver: {e}")
-        
-        return cls._instance
-
-    def get_session(self, database: Optional[str] = None):
-        """Get a new session."""
-        db = database or self.database
-        return self.driver.session(database=db)
-
-    def close(self):
-        """Close the driver."""
-        if self.driver:
-            self.driver.close()
+URI = os.getenv("NEO4J_URI")
+USER = os.getenv("NEO4J_USER")
+PASSWORD = os.getenv("NEO4J_PASSWORD")
+DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
 
 
-def test_connection():
-    """Test the Neo4j connection."""
+def get_driver():
+    """Get Neo4j driver."""
+    return GraphDatabase.driver(URI, auth=(USER, PASSWORD))
+
+
+def run_query(query, params=None):
+    """Run a Cypher query and return results."""
+    driver = get_driver()
+    with driver.session(database=DATABASE) as session:
+        result = session.run(query, params or {})
+        records = [record.data() for record in result]
+    driver.close()
+    return records
+
+
+def test():
+    """Quick test."""
+    print(f"Connecting to: {URI}")
+    print(f"Database: {DATABASE}")
+    
     try:
-        conn = Neo4jConnection()
-        session = conn.get_session()
+        # Count nodes
+        result = run_query("MATCH (n) RETURN count(n) as count")
+        print(f"✓ Nodes: {result[0]['count']}")
         
-        # Get database stats
-        result = session.run("MATCH (n) RETURN count(n) as nodes")
-        nodes = result.single()["nodes"]
+        # Count relationships  
+        result = run_query("MATCH ()-[r]->() RETURN count(r) as count")
+        print(f"✓ Relationships: {result[0]['count']}")
         
-        result = session.run("MATCH ()-[r]->() RETURN count(r) as rels")
-        rels = result.single()["rels"]
-        
-        session.close()
-        
-        print(f"✓ Database contains {nodes} nodes and {rels} relationships")
+        print("✓ Connection works!")
         return True
-        
     except Exception as e:
-        print(f"✗ Connection test failed: {e}")
+        print(f"✗ Error: {e}")
         return False
 
 
 if __name__ == "__main__":
-    test_connection()
+    test()

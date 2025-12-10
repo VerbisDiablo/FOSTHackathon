@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo4j Graph Explorer</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: #16213e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #0f3460;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+        
+        .query-box {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #query {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-family: 'Consolas', monospace;
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            color: #fff;
+        }
+        
+        #query:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+        
+        button {
+            padding: 10px 25px;
+            background: #e94560;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        button:hover { background: #ff6b6b; }
+        
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #graph {
+            flex: 1;
+            background: #0f0f1a;
+        }
+        
+        .sidebar {
+            width: 400px;
+            background: #16213e;
+            border-left: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            background: #0f3460;
+            font-weight: bold;
+            color: #e94560;
+        }
+        
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .node-info {
+            display: none;
+        }
+        
+        .node-info.active {
+            display: block;
+        }
+        
+        .label-badge {
+            display: inline-block;
+            background: #e94560;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .prop-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .prop-table th, .prop-table td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid #0f3460;
+        }
+        
+        .prop-table th {
+            color: #e94560;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .prop-table td {
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        
+        .documentation {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 8px;
+            border-left: 4px solid #e94560;
+        }
+        
+        .documentation h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+        
+        .documentation pre {
+            white-space: pre-wrap;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+        
+        .placeholder {
+            color: #666;
+            text-align: center;
+            padding: 50px 20px;
+        }
+        
+        .templates {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .template-btn {
+            padding: 5px 12px;
+            font-size: 12px;
+            background: #0f3460;
+            border: 1px solid #e94560;
+        }
+        
+        .status {
+            padding: 10px 20px;
+            background: #0f3460;
+            font-size: 13px;
+            color: #888;
+        }
+        
+        .status.error { color: #ff6b6b; }
+        .status.success { color: #4ade80; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔍 Neo4j Graph Explorer</h1>
+        <div class="query-box">
+            <input type="text" id="query" placeholder="Enter Cypher query... (e.g., MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 50)" 
+                   value="MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 50">
+            <button onclick="runQuery()">Run Query</button>
+        </div>
+        <div class="templates">
+            <button class="template-btn" onclick="setQuery('MATCH (n) RETURN n LIMIT 100')">All Nodes</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 50')">With Relations</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n:Symbol) RETURN n LIMIT 50')">Symbols</button>
+            <button class="template-btn" onclick="setQuery('MATCH p=(n)-[*1..2]->(m) RETURN p LIMIT 30')">Paths</button>
+        </div>
+    </header>
+    
+    <div class="main">
+        <div id="graph"></div>
+        
+        <div class="sidebar">
+            <div class="sidebar-header">📋 Node Details</div>
+            <div class="sidebar-content">
+                <div id="placeholder" class="placeholder">
+                    Click on a node to see its details and documentation
+                </div>
+                <div id="nodeInfo" class="node-info">
+                    <div id="nodeLabels"></div>
+                    <table class="prop-table">
+                        <thead>
+                            <tr><th>Property</th><th>Value</th></tr>
+                        </thead>
+                        <tbody id="nodeProps"></tbody>
+                    </table>
+                    <div id="documentation" class="documentation" style="display:none;">
+                        <h3>📖 Documentation</h3>
+                        <pre id="docContent"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="status" class="status">Ready</div>
+
+    <script>
+        let network = null;
+        let nodesData = new vis.DataSet();
+        let edgesData = new vis.DataSet();
+        
+        // Color palette for different node labels
+        const colors = {
+            'Symbol': '#e94560',
+            'Function': '#4ade80',
+            'Class': '#60a5fa',
+            'Module': '#f59e0b',
+            'File': '#a78bfa',
+            'default': '#888'
+        };
+        
+        function getColor(labels) {
+            for (const label of labels) {
+                if (colors[label]) return colors[label];
+            }
+            return colors.default;
+        }
+        
+        function initGraph() {
+            const container = document.getElementById('graph');
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: { color: '#fff', size: 12 },
+                    borderWidth: 2
+                },
+                edges: {
+                    arrows: 'to',
+                    color: { color: '#555', highlight: '#e94560' },
+                    font: { color: '#888', size: 10, align: 'middle' }
+                },
+                physics: {
+                    solver: 'forceAtlas2Based',
+                    forceAtlas2Based: {
+                        gravitationalConstant: -50,
+                        springLength: 100
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200
+                }
+            };
+            
+            network = new vis.Network(container, { nodes: nodesData, edges: edgesData }, options);
+            
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    showNodeDetails(nodeId);
+                }
+            });
+        }
+        
+        function setQuery(q) {
+            document.getElementById('query').value = q;
+        }
+        
+        async function runQuery() {
+            const query = document.getElementById('query').value;
+            const status = document.getElementById('status');
+            
+            status.textContent = 'Running query...';
+            status.className = 'status';
+            
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    status.textContent = 'Error: ' + data.error;
+                    status.className = 'status error';
+                    return;
+                }
+                
+                // Clear and add new data
+                nodesData.clear();
+                edgesData.clear();
+                
+                const visNodes = data.nodes.map(n => ({
+                    id: n.id,
+                    label: n.label,
+                    color: getColor(n.labels),
+                    title: n.labels.join(', '),
+                    data: n
+                }));
+                
+                const visEdges = data.edges.map((e, i) => ({
+                    id: 'e' + i,
+                    from: e.from,
+                    to: e.to,
+                    label: e.label
+                }));
+                
+                nodesData.add(visNodes);
+                edgesData.add(visEdges);
+                
+                status.textContent = `Found ${data.nodes.length} nodes and ${data.edges.length} relationships`;
+                status.className = 'status success';
+                
+                // Reset sidebar
+                document.getElementById('placeholder').style.display = 'block';
+                document.getElementById('nodeInfo').classList.remove('active');
+                
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.className = 'status error';
+            }
+        }
+        
+        async function showNodeDetails(nodeId) {
+            const node = nodesData.get(nodeId);
+            if (!node || !node.data) return;
+            
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('nodeInfo').classList.add('active');
+            
+            // Show labels
+            const labelsDiv = document.getElementById('nodeLabels');
+            labelsDiv.innerHTML = node.data.labels.map(l => 
+                `<span class="label-badge">${l}</span>`
+            ).join('');
+            
+            // Show properties
+            const propsTable = document.getElementById('nodeProps');
+            const props = node.data.properties;
+            
+            let propsHtml = '';
+            for (const [key, value] of Object.entries(props)) {
+                if (key === 'documentation') continue; // Show separately
+                let displayValue = value;
+                if (typeof value === 'object') {
+                    displayValue = JSON.stringify(value, null, 2);
+                }
+                propsHtml += `<tr><td>${key}</td><td>${displayValue}</td></tr>`;
+            }
+            propsTable.innerHTML = propsHtml;
+            
+            // Show documentation if exists
+            const docDiv = document.getElementById('documentation');
+            const docContent = document.getElementById('docContent');
+            
+            if (props.documentation) {
+                docDiv.style.display = 'block';
+                try {
+                    // Try to parse as JSON
+                    const doc = typeof props.documentation === 'string' 
+                        ? JSON.parse(props.documentation) 
+                        : props.documentation;
+                    docContent.textContent = JSON.stringify(doc, null, 2);
+                } catch {
+                    // Display as plain text
+                    docContent.textContent = props.documentation;
+                }
+            } else {
+                docDiv.style.display = 'none';
+            }
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initGraph();
+        });
+        
+        // Run query on Enter
+        document.getElementById('query').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') runQuery();
+        });
+    </script>
+</body>
+</html>
