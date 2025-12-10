@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphRAG Explorer</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+
+        /* Header / Query Bar */
+        .header {
+            grid-column: 1 / -1;
+            background: #16213e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            color: #e94560;
+            margin-right: 20px;
+        }
+
+        .query-input {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .query-input textarea {
+            flex: 1;
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            color: #fff;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            resize: none;
+            height: 50px;
+        }
+
+        .query-input textarea:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .query-input button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .query-input button:hover {
+            background: #ff6b6b;
+        }
+
+        .query-input button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        /* Graph Container */
+        .graph-container {
+            background: #1a1a2e;
+            position: relative;
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .graph-controls {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .graph-controls button {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            color: #eee;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .graph-controls button:hover {
+            background: #0f3460;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #16213e;
+            border-left: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1rem;
+            color: #e94560;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #e94560;
+            border-bottom: 2px solid #e94560;
+        }
+
+        .tab:hover {
+            color: #fff;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Node Info */
+        .node-info {
+            margin-bottom: 20px;
+        }
+
+        .node-label {
+            display: inline-block;
+            background: #e94560;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .node-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        /* Properties List */
+        .properties-list {
+            background: #0f3460;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .property-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #1a1a4e;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .property-item:last-child {
+            border-bottom: none;
+        }
+
+        .property-key {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .property-value {
+            font-size: 13px;
+            color: #fff;
+            word-break: break-word;
+        }
+
+        /* Documentation Panel */
+        .documentation {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 15px;
+            line-height: 1.6;
+        }
+
+        .documentation h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .documentation p {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .documentation pre {
+            background: #1a1a2e;
+            padding: 12px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+
+        .documentation code {
+            font-family: 'Consolas', monospace;
+        }
+
+        .no-docs {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            padding: 30px;
+        }
+
+        /* Query Templates */
+        .query-templates {
+            margin-bottom: 15px;
+        }
+
+        .template-btn {
+            background: #0f3460;
+            border: 1px solid #1a1a4e;
+            color: #eee;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 3px;
+            transition: all 0.3s;
+        }
+
+        .template-btn:hover {
+            background: #1a1a4e;
+            border-color: #e94560;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: #0f3460;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 46, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #0f3460;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #ff4757;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #0f3460;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1a1a4e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Query Input -->
+        <header class="header">
+            <h1>🔮 GraphRAG Explorer</h1>
+            <div class="query-input">
+                <textarea id="cypher-input" placeholder="Enter Cypher query... (e.g., MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50)">MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25</textarea>
+                <button id="run-query" onclick="executeQuery()">Run Query</button>
+            </div>
+        </header>
+
+        <!-- Graph Visualization -->
+        <div class="graph-container">
+            <div class="graph-controls">
+                <button onclick="fitGraph()">📐 Fit</button>
+                <button onclick="resetGraph()">🔄 Reset</button>
+                <button onclick="togglePhysics()">⚡ Physics</button>
+            </div>
+            <div id="graph"></div>
+            <div class="loading-overlay" id="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Details</h2>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('info')">Node Info</button>
+                <button class="tab" onclick="switchTab('docs')">Documentation</button>
+                <button class="tab" onclick="switchTab('templates')">Templates</button>
+            </div>
+
+            <div class="tab-content">
+                <!-- Node Info Tab -->
+                <div class="tab-panel active" id="tab-info">
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="node-count">0</div>
+                            <div class="stat-label">Nodes</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="edge-count">0</div>
+                            <div class="stat-label">Edges</div>
+                        </div>
+                    </div>
+
+                    <div id="node-details">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4M12 8h.01"/>
+                            </svg>
+                            <p>Select a node to view details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documentation Tab -->
+                <div class="tab-panel" id="tab-docs">
+                    <div id="documentation-content">
+                        <div class="no-docs">Select a node to view its documentation</div>
+                    </div>
+                </div>
+
+                <!-- Templates Tab -->
+                <div class="tab-panel" id="tab-templates">
+                    <div class="query-templates">
+                        <h3 style="margin-bottom: 10px; font-size: 14px; color: #888;">Common Queries</h3>
+                        <button class="template-btn" onclick="setQuery('MATCH (n) RETURN n LIMIT 50')">All Nodes (50)</button>
+                        <button class="template-btn" onclick="setQuery('MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50')">All Relationships</button>
+                        <button class="template-btn" onclick="setQuery('CALL db.schema.visualization()')">Schema</button>
+                        <button class="template-btn" onclick="setQuery('MATCH (n) RETURN DISTINCT labels(n) as labels, count(*) as count')">Node Counts</button>
+                        <button class="template-btn" onclick="setQuery('MATCH ()-[r]->() RETURN DISTINCT type(r) as type, count(*) as count')">Relationship Counts</button>
+                        
+                        <h3 style="margin: 20px 0 10px; font-size: 14px; color: #888;">Search by Property</h3>
+                        <button class="template-btn" onclick="setQuery(`MATCH (n) WHERE n.name CONTAINS 'search_term' RETURN n LIMIT 25`)">Search by Name</button>
+                        <button class="template-btn" onclick="setQuery(`MATCH (n) WHERE n.documentation IS NOT NULL RETURN n LIMIT 25`)">With Documentation</button>
+                        
+                        <h3 style="margin: 20px 0 10px; font-size: 14px; color: #888;">Graph Traversal</h3>
+                        <button class="template-btn" onclick="setQuery('MATCH path = (n)-[*1..3]-(m) RETURN path LIMIT 25')">Paths (depth 3)</button>
+                        <button class="template-btn" onclick="setQuery('MATCH (n)-[r]->(m) WHERE id(n) = $nodeId RETURN n, r, m')">Node Neighbors</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="error-message" id="error-msg"></div>
+
+    <script>
+        // Global variables
+        let network = null;
+        let nodes = new vis.DataSet();
+        let edges = new vis.DataSet();
+        let physicsEnabled = true;
+        let selectedNode = null;
+
+        // Color palette for different node labels
+        const labelColors = {
+            'Symbol': '#e94560',
+            'Function': '#4ecdc4',
+            'Class': '#45b7d1',
+            'Module': '#96ceb4',
+            'Variable': '#ffeaa7',
+            'Method': '#dfe6e9',
+            'Parameter': '#fd79a8',
+            'Type': '#a29bfe',
+            'Package': '#00b894',
+            'File': '#fdcb6e',
+            'default': '#6c5ce7'
+        };
+
+        // Initialize the graph
+        function initGraph() {
+            const container = document.getElementById('graph');
+            const data = { nodes: nodes, edges: edges };
+            
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: {
+                        size: 14,
+                        color: '#ffffff'
+                    },
+                    borderWidth: 2,
+                    shadow: true
+                },
+                edges: {
+                    width: 2,
+                    color: { color: '#0f3460', highlight: '#e94560' },
+                    arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+                    smooth: { type: 'continuous' },
+                    font: {
+                        size: 11,
+                        color: '#888',
+                        strokeWidth: 0
+                    }
+                },
+                physics: {
+                    enabled: true,
+                    barnesHut: {
+                        gravitationalConstant: -3000,
+                        centralGravity: 0.3,
+                        springLength: 150,
+                        springConstant: 0.04
+                    },
+                    stabilization: { iterations: 100 }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200,
+                    hideEdgesOnDrag: true
+                }
+            };
+
+            network = new vis.Network(container, data, options);
+
+            // Event handlers
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    selectNode(nodeId);
+                }
+            });
+
+            network.on('doubleClick', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    expandNode(nodeId);
+                }
+            });
+        }
+
+        // Execute Cypher query
+        async function executeQuery() {
+            const query = document.getElementById('cypher-input').value.trim();
+            if (!query) return;
+
+            showLoading(true);
+            showError(null);
+
+            try {
+                const response = await fetch('/query/cypher', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cypher: query, parameters: {} })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Query failed');
+                }
+
+                const data = await response.json();
+                processQueryResults(data.results);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Process query results and update graph
+        function processQueryResults(results) {
+            nodes.clear();
+            edges.clear();
+
+            const nodeMap = new Map();
+            const edgeSet = new Set();
+
+            results.forEach(record => {
+                Object.values(record).forEach(value => {
+                    if (value && typeof value === 'object') {
+                        // Check if it's a node (has labels or identity)
+                        if (value.labels || value._labels || value.identity !== undefined) {
+                            addNodeToGraph(value, nodeMap);
+                        }
+                        // Check if it's a relationship
+                        else if (value.type || value._type) {
+                            addEdgeToGraph(value, edgeSet);
+                        }
+                        // Check if it's a path
+                        else if (value.segments || value.start || value.end) {
+                            processPath(value, nodeMap, edgeSet);
+                        }
+                        // Handle arrays (like paths)
+                        else if (Array.isArray(value)) {
+                            value.forEach(item => {
+                                if (item && typeof item === 'object') {
+                                    if (item.labels || item._labels) {
+                                        addNodeToGraph(item, nodeMap);
+                                    } else if (item.type || item._type) {
+                                        addEdgeToGraph(item, edgeSet);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Update stats
+            document.getElementById('node-count').textContent = nodes.length;
+            document.getElementById('edge-count').textContent = edges.length;
+
+            // Fit graph to view
+            setTimeout(() => network.fit(), 100);
+        }
+
+        // Add a node to the graph
+        function addNodeToGraph(nodeData, nodeMap) {
+            const id = nodeData.identity?.low ?? nodeData.identity ?? nodeData.id ?? nodeData.elementId ?? Math.random();
+            
+            if (nodeMap.has(id)) return;
+            nodeMap.set(id, true);
+
+            const labels = nodeData.labels || nodeData._labels || ['Unknown'];
+            const properties = nodeData.properties || nodeData;
+            const label = labels[0] || 'Node';
+            
+            // Get display name
+            let displayName = properties.name || properties.title || properties.id || `${label}`;
+            if (displayName.length > 30) {
+                displayName = displayName.substring(0, 27) + '...';
+            }
+
+            const color = labelColors[label] || labelColors.default;
+
+            nodes.add({
+                id: id,
+                label: displayName,
+                title: createTooltip(label, properties),
+                color: {
+                    background: color,
+                    border: color,
+                    highlight: { background: '#fff', border: color }
+                },
+                _data: { labels, properties }
+            });
+        }
+
+        // Add an edge to the graph
+        function addEdgeToGraph(relData, edgeSet) {
+            const startId = relData.start?.low ?? relData.start ?? relData.startNode ?? relData.source;
+            const endId = relData.end?.low ?? relData.end ?? relData.endNode ?? relData.target;
+            const type = relData.type || relData._type || 'RELATED';
+            
+            const edgeKey = `${startId}-${type}-${endId}`;
+            if (edgeSet.has(edgeKey)) return;
+            edgeSet.add(edgeKey);
+
+            edges.add({
+                from: startId,
+                to: endId,
+                label: type,
+                title: type,
+                _data: relData.properties || {}
+            });
+        }
+
+        // Process a path object
+        function processPath(path, nodeMap, edgeSet) {
+            if (path.segments) {
+                path.segments.forEach(segment => {
+                    if (segment.start) addNodeToGraph(segment.start, nodeMap);
+                    if (segment.end) addNodeToGraph(segment.end, nodeMap);
+                    if (segment.relationship) addEdgeToGraph(segment.relationship, edgeSet);
+                });
+            }
+            if (path.start) addNodeToGraph(path.start, nodeMap);
+            if (path.end) addNodeToGraph(path.end, nodeMap);
+        }
+
+        // Create tooltip HTML
+        function createTooltip(label, properties) {
+            let html = `<strong>${label}</strong><br>`;
+            const keys = Object.keys(properties).filter(k => k !== 'embedding' && k !== 'documentation');
+            keys.slice(0, 5).forEach(key => {
+                let value = properties[key];
+                if (typeof value === 'string' && value.length > 50) {
+                    value = value.substring(0, 47) + '...';
+                }
+                html += `${key}: ${value}<br>`;
+            });
+            return html;
+        }
+
+        // Select a node and show its details
+        function selectNode(nodeId) {
+            selectedNode = nodes.get(nodeId);
+            if (!selectedNode || !selectedNode._data) return;
+
+            const { labels, properties } = selectedNode._data;
+            const label = labels[0] || 'Node';
+
+            // Update node info panel
+            let html = `
+                <div class="node-info">
+                    <span class="node-label">${label}</span>
+                    <h3 class="node-title">${properties.name || properties.title || 'Unnamed'}</h3>
+                </div>
+                <div class="properties-list">
+            `;
+
+            Object.entries(properties).forEach(([key, value]) => {
+                if (key === 'embedding') return; // Skip embeddings
+                if (key === 'documentation') return; // Show in docs tab
+                
+                let displayValue = value;
+                if (typeof value === 'object') {
+                    displayValue = JSON.stringify(value, null, 2);
+                } else if (typeof value === 'string' && value.length > 200) {
+                    displayValue = value.substring(0, 200) + '...';
+                }
+
+                html += `
+                    <div class="property-item">
+                        <span class="property-key">${key}</span>
+                        <span class="property-value">${displayValue}</span>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('node-details').innerHTML = html;
+
+            // Update documentation panel
+            updateDocumentation(properties);
+
+            // Switch to info tab
+            switchTab('info');
+        }
+
+        // Update documentation panel
+        function updateDocumentation(properties) {
+            const docsContainer = document.getElementById('documentation-content');
+            
+            if (properties.documentation) {
+                let docContent = properties.documentation;
+                
+                // Try to parse JSON documentation
+                try {
+                    if (typeof docContent === 'string') {
+                        const parsed = JSON.parse(docContent);
+                        docContent = formatDocumentation(parsed);
+                    } else if (typeof docContent === 'object') {
+                        docContent = formatDocumentation(docContent);
+                    }
+                } catch (e) {
+                    // If not JSON, display as-is with markdown-like formatting
+                    docContent = formatPlainDocumentation(docContent);
+                }
+
+                docsContainer.innerHTML = `<div class="documentation">${docContent}</div>`;
+            } else {
+                docsContainer.innerHTML = '<div class="no-docs">No documentation available for this node</div>';
+            }
+        }
+
+        // Format JSON documentation
+        function formatDocumentation(doc) {
+            let html = '';
+
+            if (doc.title || doc.name) {
+                html += `<h3>${doc.title || doc.name}</h3>`;
+            }
+
+            if (doc.description || doc.summary) {
+                html += `<p>${doc.description || doc.summary}</p>`;
+            }
+
+            if (doc.parameters && Array.isArray(doc.parameters)) {
+                html += '<h4 style="margin-top: 15px; color: #4ecdc4;">Parameters</h4>';
+                doc.parameters.forEach(param => {
+                    html += `<p><code>${param.name}</code>: ${param.type || ''} - ${param.description || ''}</p>`;
+                });
+            }
+
+            if (doc.returns || doc.returnType) {
+                html += '<h4 style="margin-top: 15px; color: #4ecdc4;">Returns</h4>';
+                html += `<p>${doc.returns || doc.returnType}</p>`;
+            }
+
+            if (doc.example || doc.examples) {
+                html += '<h4 style="margin-top: 15px; color: #4ecdc4;">Example</h4>';
+                const example = doc.example || (Array.isArray(doc.examples) ? doc.examples[0] : doc.examples);
+                html += `<pre><code>${example}</code></pre>`;
+            }
+
+            if (doc.notes) {
+                html += '<h4 style="margin-top: 15px; color: #4ecdc4;">Notes</h4>';
+                html += `<p>${doc.notes}</p>`;
+            }
+
+            // Handle any other fields
+            const handled = ['title', 'name', 'description', 'summary', 'parameters', 'returns', 'returnType', 'example', 'examples', 'notes'];
+            Object.entries(doc).forEach(([key, value]) => {
+                if (!handled.includes(key) && value) {
+                    html += `<h4 style="margin-top: 15px; color: #4ecdc4;">${key}</h4>`;
+                    if (typeof value === 'string') {
+                        html += `<p>${value}</p>`;
+                    } else {
+                        html += `<pre><code>${JSON.stringify(value, null, 2)}</code></pre>`;
+                    }
+                }
+            });
+
+            return html || '<p>Documentation content is empty</p>';
+        }
+
+        // Format plain text documentation
+        function formatPlainDocumentation(text) {
+            // Simple markdown-like formatting
+            let html = text
+                .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            return `<p>${html}</p>`;
+        }
+
+        // Expand node (double-click to see neighbors)
+        async function expandNode(nodeId) {
+            const node = nodes.get(nodeId);
+            if (!node) return;
+
+            showLoading(true);
+            try {
+                const query = `MATCH (n)-[r]-(m) WHERE id(n) = ${nodeId} RETURN n, r, m LIMIT 20`;
+                const response = await fetch('/query/cypher', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cypher: query, parameters: {} })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const nodeMap = new Map();
+                    const edgeSet = new Set();
+                    
+                    // Keep existing nodes
+                    nodes.forEach(n => nodeMap.set(n.id, true));
+                    edges.forEach(e => edgeSet.add(`${e.from}-${e.label}-${e.to}`));
+                    
+                    data.results.forEach(record => {
+                        Object.values(record).forEach(value => {
+                            if (value && typeof value === 'object') {
+                                if (value.labels || value._labels) {
+                                    addNodeToGraph(value, nodeMap);
+                                } else if (value.type || value._type) {
+                                    addEdgeToGraph(value, edgeSet);
+                                }
+                            }
+                        });
+                    });
+
+                    document.getElementById('node-count').textContent = nodes.length;
+                    document.getElementById('edge-count').textContent = edges.length;
+                }
+            } catch (error) {
+                console.error('Expand failed:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            document.querySelector(`.tab:nth-child(${tabName === 'info' ? 1 : tabName === 'docs' ? 2 : 3})`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Set query from template
+        function setQuery(query) {
+            document.getElementById('cypher-input').value = query;
+        }
+
+        // Graph controls
+        function fitGraph() {
+            network.fit();
+        }
+
+        function resetGraph() {
+            nodes.clear();
+            edges.clear();
+            document.getElementById('node-count').textContent = '0';
+            document.getElementById('edge-count').textContent = '0';
+            document.getElementById('node-details').innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    <p>Select a node to view details</p>
+                </div>
+            `;
+            document.getElementById('documentation-content').innerHTML = '<div class="no-docs">Select a node to view its documentation</div>';
+        }
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            network.setOptions({ physics: { enabled: physicsEnabled } });
+        }
+
+        // UI helpers
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+            document.getElementById('run-query').disabled = show;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error-msg');
+            if (message) {
+                errorEl.textContent = message;
+                errorEl.classList.add('active');
+                setTimeout(() => errorEl.classList.remove('active'), 5000);
+            } else {
+                errorEl.classList.remove('active');
+            }
+        }
+
+        // Keyboard shortcuts
+        document.getElementById('cypher-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                executeQuery();
+            }
+        });
+
+        // Load entire database on startup
+        async function loadDatabaseOnStartup() {
+            showLoading(true);
+            showError(null);
+            
+            try {
+                // Try to load all relationships first (which will bring in nodes)
+                const query = 'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100';
+                const response = await fetch('/query/cypher', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cypher: query, parameters: {} })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load database');
+                }
+
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    processQueryResults(data.results);
+                } else {
+                    // If no relationships, try loading standalone nodes
+                    const nodesQuery = 'MATCH (n) RETURN n LIMIT 100';
+                    const nodesResponse = await fetch('/query/cypher', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cypher: nodesQuery, parameters: {} })
+                    });
+                    
+                    if (nodesResponse.ok) {
+                        const nodesData = await nodesResponse.json();
+                        if (nodesData.results && nodesData.results.length > 0) {
+                            processQueryResults(nodesData.results);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not auto-load database:', error.message);
+                // Don't show error to user, just continue
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            initGraph();
+            // Small delay to ensure vis.js is ready
+            setTimeout(loadDatabaseOnStartup, 500);
+        });
+    </script>
+</body>
+</html>
+

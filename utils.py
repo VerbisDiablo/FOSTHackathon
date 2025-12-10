@@ -1,14 +1,18 @@
 from neo4j import GraphDatabase
+from neo4j.exceptions import ServiceUnavailable, DriverError
 from sentence_transformers import SentenceTransformer
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import os
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class Neo4jConnection:
-    """Singleton connection to Neo4j database."""
+    """Singleton connection to Neo4j database with retry logic."""
     _instance = None
+    _max_retries = 3
+    _retry_delay = 2
 
     def __new__(cls):
         if cls._instance is None:
@@ -16,19 +20,48 @@ class Neo4jConnection:
             uri = os.getenv("NEO4J_URI")
             username = os.getenv("NEO4J_USER")
             password = os.getenv("NEO4J_PASSWORD")
+            database = os.getenv("NEO4J_DATABASE", "neo4j")
 
             if not all([uri, username, password]):
                 raise ValueError("Missing Neo4j credentials in .env file")
 
-            cls._instance.driver = GraphDatabase.driver(uri, auth=(username, password))
             try:
-                cls._instance.driver.verify_connectivity()
+                cls._instance.driver = GraphDatabase.driver(
+                    uri, 
+                    auth=(username, password),
+                    max_connection_lifetime=3600,
+                    connection_timeout=60,
+                    connection_acquisition_timeout=60
+                )
+                cls._instance.database = database
+                cls._instance.uri = uri
+                print(f"✓ Driver created for {uri}")
+                print(f"✓ Database: {database}")
+                    
             except Exception as e:
-                raise ConnectionError(f"Failed to connect to Neo4j: {e}")
+                raise ConnectionError(f"Failed to create Neo4j driver: {e}")
         return cls._instance
 
-    def get_session(self):
-        return self.driver.session()
+    def get_session(self, database: Optional[str] = None):
+        """Get a session with automatic retry logic."""
+        db = database or self.database
+        max_retries = self._max_retries
+        retry_count = 0
+        last_error = None
+        
+        while retry_count < max_retries:
+            try:
+                session = self.driver.session(database=db)
+                # Just return the session - don't verify immediately
+                return session
+            except (ServiceUnavailable, DriverError) as e:
+                last_error = e
+                retry_count += 1
+                if retry_count < max_retries:
+                    print(f"Connection attempt {retry_count} failed, retrying in {self._retry_delay}s...")
+                    time.sleep(self._retry_delay)
+        
+        raise ConnectionError(f"Failed to connect after {max_retries} attempts: {last_error}")
 
     def close(self):
         self.driver.close()
