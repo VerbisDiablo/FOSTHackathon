@@ -75,7 +75,7 @@
         }
         
         .sidebar {
-            width: 400px;
+            width: 450px;
             background: #16213e;
             border-left: 1px solid #0f3460;
             display: flex;
@@ -104,59 +104,168 @@
             display: block;
         }
         
+        /* Node Header */
+        .node-header {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #e94560;
+        }
+        
+        .node-name {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+        
+        .node-type {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
         .label-badge {
             display: inline-block;
             background: #e94560;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 15px;
-            font-size: 12px;
+            font-size: 11px;
             margin-right: 5px;
-            margin-bottom: 10px;
+            font-weight: bold;
         }
         
+        /* Section styling */
+        .section {
+            background: #0f3460;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: #162447;
+            padding: 12px 15px;
+            font-weight: bold;
+            color: #e94560;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-header:hover {
+            background: #1a2a50;
+        }
+        
+        .section-header .toggle {
+            font-size: 0.8rem;
+        }
+        
+        .section-content {
+            padding: 15px;
+        }
+        
+        .section-content.collapsed {
+            display: none;
+        }
+        
+        /* Properties table */
         .prop-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
         }
         
-        .prop-table th, .prop-table td {
-            text-align: left;
-            padding: 8px 10px;
-            border-bottom: 1px solid #0f3460;
-        }
-        
-        .prop-table th {
-            color: #e94560;
-            font-size: 12px;
-            text-transform: uppercase;
+        .prop-table tr:not(:last-child) {
+            border-bottom: 1px solid #1a2a50;
         }
         
         .prop-table td {
-            font-family: 'Consolas', monospace;
-            font-size: 13px;
-            word-break: break-all;
+            padding: 8px 5px;
+            vertical-align: top;
         }
         
-        .documentation {
-            margin-top: 20px;
-            padding: 15px;
-            background: #0f3460;
-            border-radius: 8px;
-            border-left: 4px solid #e94560;
-        }
-        
-        .documentation h3 {
+        .prop-table td:first-child {
             color: #e94560;
-            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            width: 120px;
+            text-transform: uppercase;
         }
         
-        .documentation pre {
-            white-space: pre-wrap;
+        .prop-table td:last-child {
             font-family: 'Consolas', monospace;
             font-size: 13px;
-            line-height: 1.5;
+            word-break: break-word;
             color: #ccc;
+        }
+        
+        /* Documentation sections */
+        .doc-section {
+            background: #162447;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .doc-section-header {
+            padding: 10px 12px;
+            font-weight: bold;
+            color: #4ade80;
+            font-size: 0.85rem;
+            background: #1a2a50;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .doc-section-header:hover {
+            background: #1f3060;
+        }
+        
+        .doc-section-content {
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #ddd;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .doc-section-content.collapsed {
+            display: none;
+        }
+        
+        /* Code blocks in documentation */
+        .doc-code {
+            background: #0a0a15;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        
+        /* Parameters/Returns styling */
+        .param-item {
+            margin-bottom: 8px;
+            padding-left: 10px;
+            border-left: 2px solid #e94560;
+        }
+        
+        .param-name {
+            color: #60a5fa;
+            font-weight: bold;
+        }
+        
+        .param-type {
+            color: #f59e0b;
+            font-size: 11px;
         }
         
         .placeholder {
@@ -188,21 +297,57 @@
         
         .status.error { color: #ff6b6b; }
         .status.success { color: #4ade80; }
+        
+        /* Algorithm buttons */
+        .algo-buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .algo-btn {
+            padding: 5px 12px;
+            font-size: 12px;
+            background: #162447;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+        
+        .algo-btn:hover {
+            background: #4ade80;
+            color: #000;
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>🔍 Neo4j Graph Explorer</h1>
         <div class="query-box">
-            <input type="text" id="query" placeholder="Enter Cypher query... (e.g., MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 50)" 
-                   value="MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 50">
+            <input type="text" id="query" placeholder="Enter Cypher query..." 
+                   value="MATCH (n:SymbolModel)-[r]->(m) RETURN n,r,m LIMIT 50">
             <button onclick="runQuery()">Run Query</button>
         </div>
         <div class="templates">
-            <button class="template-btn" onclick="setQuery('MATCH (n) RETURN n LIMIT 100')">All Nodes</button>
-            <button class="template-btn" onclick="setQuery('MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 50')">With Relations</button>
-            <button class="template-btn" onclick="setQuery('MATCH (n:Symbol) RETURN n LIMIT 50')">Symbols</button>
-            <button class="template-btn" onclick="setQuery('MATCH p=(n)-[*1..2]->(m) RETURN p LIMIT 30')">Paths</button>
+            <span style="color:#888;font-size:12px;padding:5px;">📝 Queries:</span>
+            <button class="template-btn" onclick="setQuery('MATCH (n:SymbolModel) RETURN n LIMIT 50')">All Symbols</button>
+            <button class="template-btn" onclick="setQuery(`MATCH (n:SymbolModel) WHERE n.kind = 'class' RETURN n LIMIT 50`)">Classes</button>
+            <button class="template-btn" onclick="setQuery(`MATCH (n:SymbolModel) WHERE n.kind = 'function' RETURN n LIMIT 50`)">Functions</button>
+            <button class="template-btn" onclick="setQuery(`MATCH (n:SymbolModel) WHERE n.kind = 'method' RETURN n LIMIT 50`)">Methods</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n:FileModel) RETURN n LIMIT 50')">Files</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n:FolderModel) RETURN n LIMIT 50')">Folders</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n:SymbolModel) WHERE n.documentation IS NOT NULL RETURN n LIMIT 30')">With Docs</button>
+            <button class="template-btn" onclick="setQuery('MATCH (f:FileModel)-[r:CONTAINS]->(s:SymbolModel) RETURN f,r,s LIMIT 50')">File→Symbols</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n)-[r:CONTAINS]->(m) RETURN n,r,m LIMIT 50')">Contains</button>
+            <button class="template-btn" onclick="setQuery('MATCH (n:SymbolModel)-[r:HAS_TAG]->(t:Tag) RETURN n,r,t LIMIT 50')">Tags</button>
+            <button class="template-btn" onclick="setQuery(`MATCH (n:SymbolModel) WHERE n.name CONTAINS 'Server' RETURN n LIMIT 30`)">Search Name</button>
+        </div>
+        <div class="algo-buttons">
+            <span style="color:#888;font-size:12px;padding:5px;">📊 Algorithms:</span>
+            <button class="algo-btn" onclick="runAlgorithm('degree')">Degree Centrality</button>
+            <button class="algo-btn" onclick="runAlgorithm('pagerank')">PageRank</button>
+            <button class="algo-btn" onclick="runAlgorithm('communities')">Communities</button>
+            <button class="algo-btn" onclick="runAlgorithm('betweenness')">Betweenness</button>
         </div>
     </header>
     
@@ -215,19 +360,7 @@
                 <div id="placeholder" class="placeholder">
                     Click on a node to see its details and documentation
                 </div>
-                <div id="nodeInfo" class="node-info">
-                    <div id="nodeLabels"></div>
-                    <table class="prop-table">
-                        <thead>
-                            <tr><th>Property</th><th>Value</th></tr>
-                        </thead>
-                        <tbody id="nodeProps"></tbody>
-                    </table>
-                    <div id="documentation" class="documentation" style="display:none;">
-                        <h3>📖 Documentation</h3>
-                        <pre id="docContent"></pre>
-                    </div>
-                </div>
+                <div id="nodeInfo" class="node-info"></div>
             </div>
         </div>
     </div>
@@ -238,22 +371,59 @@
         let network = null;
         let nodesData = new vis.DataSet();
         let edgesData = new vis.DataSet();
+        let currentAlgorithm = null;
         
         // Color palette for different node labels
-        const colors = {
-            'Symbol': '#e94560',
-            'Function': '#4ade80',
-            'Class': '#60a5fa',
-            'Module': '#f59e0b',
-            'File': '#a78bfa',
-            'default': '#888'
+        const labelColors = {
+            'SymbolModel': '#e94560',
+            'FileModel': '#4ade80',
+            'FolderModel': '#60a5fa',
+            'ProjectData': '#f59e0b',
+            'Language': '#a78bfa',
+            'Tag': '#14b8a6',
+            'SymbolTag': '#f472b6',
+            '__KGBuilder__': '#6b7280',
+            'default': '#6b7280'
         };
         
-        function getColor(labels) {
-            for (const label of labels) {
-                if (colors[label]) return colors[label];
+        // Kind colors for SymbolModel
+        const kindColors = {
+            'class': '#60a5fa',
+            'function': '#4ade80',
+            'method': '#f59e0b'
+        };
+        
+        // Community colors for algorithm visualization
+        const communityColors = [
+            '#e94560', '#4ade80', '#60a5fa', '#f59e0b', '#a78bfa',
+            '#14b8a6', '#f472b6', '#22d3d8', '#84cc16', '#fb923c',
+            '#c084fc', '#2dd4bf', '#facc15', '#f87171', '#38bdf8'
+        ];
+        
+        function getColor(labels, score = null, maxScore = null, algorithm = null, kind = null) {
+            if (algorithm === 'communities' && score !== null) {
+                return communityColors[score % communityColors.length];
             }
-            return colors.default;
+            if (algorithm && score !== null && maxScore) {
+                // Gradient based on score
+                const intensity = Math.max(0.3, score / maxScore);
+                return `rgba(233, 69, 96, ${intensity})`;
+            }
+            // Use kind color for SymbolModel
+            if (labels.includes('SymbolModel') && kind && kindColors[kind]) {
+                return kindColors[kind];
+            }
+            for (const label of labels) {
+                if (labelColors[label]) return labelColors[label];
+            }
+            return labelColors.default;
+        }
+        
+        function getNodeSize(score, maxScore, algorithm) {
+            if (!algorithm || score === null || !maxScore) return 20;
+            const minSize = 15;
+            const maxSize = 50;
+            return minSize + (score / maxScore) * (maxSize - minSize);
         }
         
         function initGraph() {
@@ -263,12 +433,14 @@
                     shape: 'dot',
                     size: 20,
                     font: { color: '#fff', size: 12 },
-                    borderWidth: 2
+                    borderWidth: 2,
+                    shadow: true
                 },
                 edges: {
                     arrows: 'to',
                     color: { color: '#555', highlight: '#e94560' },
-                    font: { color: '#888', size: 10, align: 'middle' }
+                    font: { color: '#888', size: 10, align: 'middle' },
+                    smooth: { type: 'continuous' }
                 },
                 physics: {
                     solver: 'forceAtlas2Based',
@@ -300,6 +472,7 @@
         async function runQuery() {
             const query = document.getElementById('query').value;
             const status = document.getElementById('status');
+            currentAlgorithm = null;
             
             status.textContent = 'Running query...';
             status.className = 'status';
@@ -319,34 +492,9 @@
                     return;
                 }
                 
-                // Clear and add new data
-                nodesData.clear();
-                edgesData.clear();
-                
-                const visNodes = data.nodes.map(n => ({
-                    id: n.id,
-                    label: n.label,
-                    color: getColor(n.labels),
-                    title: n.labels.join(', '),
-                    data: n
-                }));
-                
-                const visEdges = data.edges.map((e, i) => ({
-                    id: 'e' + i,
-                    from: e.from,
-                    to: e.to,
-                    label: e.label
-                }));
-                
-                nodesData.add(visNodes);
-                edgesData.add(visEdges);
-                
+                displayGraph(data);
                 status.textContent = `Found ${data.nodes.length} nodes and ${data.edges.length} relationships`;
                 status.className = 'status success';
-                
-                // Reset sidebar
-                document.getElementById('placeholder').style.display = 'block';
-                document.getElementById('nodeInfo').classList.remove('active');
                 
             } catch (err) {
                 status.textContent = 'Error: ' + err.message;
@@ -354,53 +502,336 @@
             }
         }
         
-        async function showNodeDetails(nodeId) {
+        async function runAlgorithm(algo) {
+            const status = document.getElementById('status');
+            currentAlgorithm = algo;
+            
+            status.textContent = `Running ${algo} analysis...`;
+            status.className = 'status';
+            
+            try {
+                const response = await fetch(`/analyze/${algo}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    status.textContent = 'Error: ' + data.error;
+                    status.className = 'status error';
+                    return;
+                }
+                
+                displayGraph(data, data.algorithm, data.maxScore);
+                status.textContent = `${algo}: Found ${data.nodes.length} nodes (max score: ${data.maxScore})`;
+                status.className = 'status success';
+                
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.className = 'status error';
+            }
+        }
+        
+        function displayGraph(data, algorithm = null, maxScore = null) {
+            nodesData.clear();
+            edgesData.clear();
+            
+            const visNodes = data.nodes.map(n => ({
+                id: n.id,
+                label: n.label,
+                color: getColor(n.labels, n.score, maxScore, algorithm, n.properties?.kind),
+                size: getNodeSize(n.score, maxScore, algorithm),
+                title: `${n.labels.join(', ')}${n.properties?.kind ? ' (' + n.properties.kind + ')' : ''}${n.score !== undefined ? ' | Score: ' + n.score : ''}`,
+                data: n
+            }));
+            
+            const visEdges = data.edges.map((e, i) => ({
+                id: 'e' + i,
+                from: e.from,
+                to: e.to,
+                label: e.label
+            }));
+            
+            nodesData.add(visNodes);
+            edgesData.add(visEdges);
+            
+            // Reset sidebar
+            document.getElementById('placeholder').style.display = 'block';
+            document.getElementById('nodeInfo').classList.remove('active');
+            document.getElementById('nodeInfo').innerHTML = '';
+        }
+        
+        function showNodeDetails(nodeId) {
             const node = nodesData.get(nodeId);
             if (!node || !node.data) return;
             
             document.getElementById('placeholder').style.display = 'none';
-            document.getElementById('nodeInfo').classList.add('active');
+            const nodeInfo = document.getElementById('nodeInfo');
+            nodeInfo.classList.add('active');
             
-            // Show labels
-            const labelsDiv = document.getElementById('nodeLabels');
-            labelsDiv.innerHTML = node.data.labels.map(l => 
-                `<span class="label-badge">${l}</span>`
-            ).join('');
-            
-            // Show properties
-            const propsTable = document.getElementById('nodeProps');
             const props = node.data.properties;
+            const labels = node.data.labels;
             
-            let propsHtml = '';
-            for (const [key, value] of Object.entries(props)) {
-                if (key === 'documentation') continue; // Show separately
-                let displayValue = value;
-                if (typeof value === 'object') {
-                    displayValue = JSON.stringify(value, null, 2);
-                }
-                propsHtml += `<tr><td>${key}</td><td>${displayValue}</td></tr>`;
+            // Get display name
+            const nodeName = props.name || props.title || props.identifier || props.id || 'Unknown';
+            const nodeType = props.type || props.kind || labels[0] || 'Node';
+            
+            let html = `
+                <div class="node-header">
+                    <div class="node-name">${escapeHtml(nodeName)}</div>
+                    <div class="node-type">${escapeHtml(nodeType)}</div>
+                    <div>
+                        ${labels.map(l => `<span class="label-badge" style="background:${labelColors[l] || labelColors.default}">${l}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // Properties section
+            const propsToShow = Object.entries(props).filter(([key]) => 
+                key !== 'documentation' && key !== 'doc' && key !== 'docs'
+            );
+            
+            if (propsToShow.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            📝 Properties <span class="toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <table class="prop-table">
+                                ${propsToShow.map(([key, value]) => `
+                                    <tr>
+                                        <td>${escapeHtml(key)}</td>
+                                        <td>${formatValue(value)}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    </div>
+                `;
             }
-            propsTable.innerHTML = propsHtml;
             
-            // Show documentation if exists
-            const docDiv = document.getElementById('documentation');
-            const docContent = document.getElementById('docContent');
-            
-            if (props.documentation) {
-                docDiv.style.display = 'block';
-                try {
-                    // Try to parse as JSON
-                    const doc = typeof props.documentation === 'string' 
-                        ? JSON.parse(props.documentation) 
-                        : props.documentation;
-                    docContent.textContent = JSON.stringify(doc, null, 2);
-                } catch {
-                    // Display as plain text
-                    docContent.textContent = props.documentation;
-                }
-            } else {
-                docDiv.style.display = 'none';
+            // Algorithm score if present
+            if (node.data.score !== undefined) {
+                html += `
+                    <div class="section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            📊 Algorithm Score <span class="toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <table class="prop-table">
+                                <tr><td>Score</td><td><strong style="color:#4ade80;font-size:1.2em">${node.data.score}</strong></td></tr>
+                                ${node.data.inDegree !== undefined ? `<tr><td>In-Degree</td><td>${node.data.inDegree}</td></tr>` : ''}
+                                ${node.data.outDegree !== undefined ? `<tr><td>Out-Degree</td><td>${node.data.outDegree}</td></tr>` : ''}
+                                ${node.data.community !== undefined ? `<tr><td>Community</td><td>${node.data.community}</td></tr>` : ''}
+                                ${node.data.connectedLabels ? `<tr><td>Connects</td><td>${node.data.connectedLabels.join(', ')}</td></tr>` : ''}
+                            </table>
+                        </div>
+                    </div>
+                `;
             }
+            
+            // Documentation section
+            const docData = props.documentation || props.doc || props.docs;
+            if (docData) {
+                html += renderDocumentation(docData);
+            }
+            
+            nodeInfo.innerHTML = html;
+        }
+        
+        function renderDocumentation(docData) {
+            let doc;
+            try {
+                doc = typeof docData === 'string' ? JSON.parse(docData) : docData;
+            } catch {
+                // Plain text documentation
+                return `
+                    <div class="section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            📖 Documentation <span class="toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <pre style="white-space:pre-wrap">${escapeHtml(docData)}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Structured JSON documentation
+            let html = `
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        📖 Documentation <span class="toggle">▼</span>
+                    </div>
+                    <div class="section-content">
+            `;
+            
+            // Specific documentation fields matching your format
+            const docSections = [
+                { key: 'summary', icon: '📋', title: 'Summary' },
+                { key: 'description', icon: '📝', title: 'Description' },
+                { key: 'extended_explications', icon: '📄', title: 'Extended Explanation' },
+                { key: 'parameters', icon: '⚙️', title: 'Parameters' },
+                { key: 'params', icon: '⚙️', title: 'Parameters' },
+                { key: 'return_values', icon: '↩️', title: 'Return Values' },
+                { key: 'returns', icon: '↩️', title: 'Returns' },
+                { key: 'raises', icon: '⚠️', title: 'Raises' },
+                { key: 'throws', icon: '⚠️', title: 'Throws' },
+                { key: 'examples', icon: '💻', title: 'Examples' },
+                { key: 'example', icon: '💻', title: 'Example' },
+                { key: 'tags', icon: '🏷️', title: 'Tags' },
+                { key: 'notes', icon: '📌', title: 'Notes' },
+                { key: 'see', icon: '👁️', title: 'See Also' },
+                { key: 'seeAlso', icon: '👁️', title: 'See Also' },
+                { key: 'since', icon: '📅', title: 'Since' },
+                { key: 'version', icon: '🏷️', title: 'Version' },
+                { key: 'author', icon: '👤', title: 'Author' },
+                { key: 'deprecated', icon: '⛔', title: 'Deprecated' }
+            ];
+            
+            for (const section of docSections) {
+                const value = doc[section.key];
+                if (value !== undefined && value !== null && value !== '' && 
+                    !(Array.isArray(value) && value.length === 0) &&
+                    !(typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0)) {
+                    html += renderDocSection(section.icon, section.title, value, section.key);
+                }
+            }
+            
+            // Render any remaining fields not in the predefined list
+            const handledKeys = docSections.map(s => s.key);
+            for (const [key, value] of Object.entries(doc)) {
+                if (!handledKeys.includes(key) && value !== null && value !== undefined && value !== '' &&
+                    !(Array.isArray(value) && value.length === 0)) {
+                    html += renderDocSection('📎', key, value, key);
+                }
+            }
+            
+            html += `</div></div>`;
+            return html;
+        }
+        
+        function renderDocSection(icon, title, content, key = '') {
+            let contentHtml;
+            
+            // Handle tags specially - show as badges
+            if (key === 'tags' && Array.isArray(content)) {
+                contentHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    ${content.map(tag => `<span style="background:#e94560;padding:4px 10px;border-radius:12px;font-size:11px;color:#fff">${escapeHtml(tag)}</span>`).join('')}
+                </div>`;
+            }
+            // Handle examples specially - show as code blocks
+            else if ((key === 'examples' || key === 'example') && Array.isArray(content)) {
+                contentHtml = content.map((ex, i) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="color:#888;font-size:11px;margin-bottom:4px;">Example ${i + 1}:</div>
+                        <div class="doc-code">${escapeHtml(ex)}</div>
+                    </div>
+                `).join('');
+            }
+            // Handle return_values object
+            else if ((key === 'return_values' || key === 'returns') && typeof content === 'object' && !Array.isArray(content)) {
+                if (content.type || content.description) {
+                    contentHtml = `
+                        <div class="param-item">
+                            ${content.type ? `<span class="param-type">${escapeHtml(content.type)}</span>` : ''}
+                            ${content.description ? `<div style="color:#aaa;margin-top:3px;">${escapeHtml(content.description)}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    contentHtml = Object.entries(content).map(([k, v]) => 
+                        `<div class="param-item">
+                            <span class="param-name">${escapeHtml(k)}</span>: ${escapeHtml(String(v))}
+                        </div>`
+                    ).join('');
+                }
+            }
+            // Handle parameters array
+            else if (Array.isArray(content)) {
+                contentHtml = content.map(item => {
+                    if (typeof item === 'object') {
+                        // Parameter object: {name, type, description}
+                        return `
+                            <div class="param-item">
+                                <span class="param-name">${escapeHtml(item.name || item.param || '')}</span>
+                                ${item.type ? `<span class="param-type"> : ${escapeHtml(item.type)}</span>` : ''}
+                                ${item.description || item.desc ? `<div style="color:#aaa;margin-top:3px">${escapeHtml(item.description || item.desc)}</div>` : ''}
+                            </div>
+                        `;
+                    }
+                    return `<div style="margin-bottom:5px">• ${escapeHtml(String(item))}</div>`;
+                }).join('');
+            } 
+            // Handle object
+            else if (typeof content === 'object') {
+                contentHtml = Object.entries(content).map(([k, v]) => 
+                    `<div class="param-item">
+                        <span class="param-name">${escapeHtml(k)}</span>: ${escapeHtml(String(v))}
+                    </div>`
+                ).join('');
+            } 
+            // Handle string content
+            else {
+                const strContent = String(content);
+                // Check if it looks like code
+                if (strContent.includes('\n') || strContent.includes('(') && strContent.includes(')')) {
+                    contentHtml = `<div class="doc-code">${escapeHtml(strContent)}</div>`;
+                } else {
+                    contentHtml = `<div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(strContent)}</div>`;
+                }
+            }
+            
+            return `
+                <div class="doc-section">
+                    <div class="doc-section-header" onclick="toggleDocSection(this)">
+                        ${icon} ${title} <span class="toggle">▼</span>
+                    </div>
+                    <div class="doc-section-content">${contentHtml}</div>
+                </div>
+            `;
+        }
+        
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const toggle = header.querySelector('.toggle');
+            content.classList.toggle('collapsed');
+            toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+        }
+        
+        function toggleDocSection(header) {
+            const content = header.nextElementSibling;
+            const toggle = header.querySelector('.toggle');
+            content.classList.toggle('collapsed');
+            toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+        }
+        
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+        
+        function formatValue(value) {
+            if (value === null) return '<span style="color:#888">null</span>';
+            if (value === undefined) return '<span style="color:#888">undefined</span>';
+            if (typeof value === 'boolean') return `<span style="color:#f59e0b">${value}</span>`;
+            if (typeof value === 'number') return `<span style="color:#60a5fa">${value}</span>`;
+            if (Array.isArray(value)) {
+                if (value.length === 0) return '<span style="color:#888">[]</span>';
+                return escapeHtml(JSON.stringify(value));
+            }
+            if (typeof value === 'object') {
+                return `<pre style="margin:0;font-size:11px">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+            }
+            // String - truncate if too long
+            const str = String(value);
+            if (str.length > 200) {
+                return escapeHtml(str.substring(0, 200)) + '...';
+            }
+            return escapeHtml(str);
         }
         
         // Initialize on load
