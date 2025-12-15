@@ -419,8 +419,148 @@ def get_relationships():
         return jsonify({'types': types})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/schema', methods=['GET'])
+def get_schema():
+    """Get database schema information for AI context."""
+    try:
+        driver = get_driver()
+        schema = {}
+        
+        with driver.session(database=DATABASE) as session:
+            # Get labels
+            result = session.run("CALL db.labels()")
+            schema['labels'] = [record[0] for record in result]
+            
+            # Get relationship types
+            result = session.run("CALL db.relationshipTypes()")
+            schema['relationships'] = [record[0] for record in result]
+            
+            # Get property keys for SymbolModel
+            result = session.run("""
+                MATCH (n:SymbolModel) 
+                WITH n LIMIT 1 
+                RETURN keys(n) as props
+            """)
+            record = result.single()
+            schema['symbolProperties'] = record['props'] if record else []
+            
+            # Get distinct kinds
+            result = session.run("MATCH (n:SymbolModel) RETURN DISTINCT n.kind as kind")
+            schema['kinds'] = [record['kind'] for record in result if record['kind']]
+            
+            # Sample data for context
+            result = session.run("MATCH (n:SymbolModel) RETURN n.name as name LIMIT 5")
+            schema['sampleNames'] = [record['name'] for record in result]
+        
+        driver.close()
+        return jsonify(schema)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/ai/chat', methods=['POST'])
+def ai_chat():
+    """Chat with Ollama to help build Cypher queries."""
+    import requests
+    
+    user_message = request.json.get('message', '')
+    model = request.json.get('model', 'llama3.2')
+    
+    if not user_message.strip():
+        return jsonify({'error': 'Empty message'}), 400
+    
+    try:
+        # Get schema for context
+        driver = get_driver()
+        with driver.session(database=DATABASE) as session:
+            result = session.run("CALL db.labels()")
+            labels = [record[0] for record in result]
+            
+            result = session.run("CALL db.relationshipTypes()")
+            relationships = [record[0] for record in result]
+            
+            result = session.run("MATCH (n:SymbolModel) RETURN DISTINCT n.kind as kind")
+            kinds = [record['kind'] for record in result if record['kind']]
+            
+            result = session.run("""
+                MATCH (n:SymbolModel) 
+                WITH n LIMIT 1 
+                RETURN keys(n) as props
+            """)
+            record = result.single()
+            symbol_props = record['props'] if record else []
+        driver.close()
+        
+        # Build system prompt with schema context
+        system_prompt = f"""You are a Neo4j Cypher query assistant. Help users build Cypher queries for their graph database.
+
+DATABASE SCHEMA:
+- Node Labels: {', '.join(labels)}
+- Relationship Types: {', '.join(relationships)}
+- SymbolModel kinds: {', '.join(kinds)}
+- SymbolModel properties: {', '.join(symbol_props)}
+
+IMPORTANT RULES:
+1. SymbolModel nodes have a 'kind' property (class, function, method)
+2. Use WHERE n.kind = 'class' to filter by kind, NOT :Class label
+3. FileModel contains SymbolModel via CONTAINS relationship
+4. FolderModel contains FileModel via CONTAINS relationship
+5. Symbols can have tags via HAS_TAG relationship to Tag nodes
+6. The 'documentation' property contains JSON with summary, description, parameters, examples, etc.
+
+EXAMPLE QUERIES:
+- All classes: MATCH (n:SymbolModel) WHERE n.kind = 'class' RETURN n LIMIT 50
+- All functions: MATCH (n:SymbolModel) WHERE n.kind = 'function' RETURN n LIMIT 50
+- File structure: MATCH (f:FileModel)-[r:CONTAINS]->(s:SymbolModel) RETURN f,r,s LIMIT 50
+- Search by name: MATCH (n:SymbolModel) WHERE n.name CONTAINS 'Server' RETURN n
+- With documentation: MATCH (n:SymbolModel) WHERE n.documentation IS NOT NULL RETURN n LIMIT 30
+
+Respond with a valid Cypher query. If explaining, keep it brief and include the query.
+Always return visualization-friendly queries (RETURN nodes and relationships, not just properties)."""
+
+        # Call Ollama API
+        ollama_response = requests.post(
+            'http://localhost:11434/api/generate',
+            json={
+                'model': model,
+                'prompt': user_message,
+                'system': system_prompt,
+                'stream': False
+            },
+            timeout=60
+        )
+        
+        if ollama_response.status_code == 200:
+            response_data = ollama_response.json()
+            return jsonify({
+                'response': response_data.get('response', ''),
+                'model': model
+            })
+        else:
+            return jsonify({'error': f'Ollama error: {ollama_response.status_code}'}), 500
+            
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Cannot connect to Ollama. Make sure Ollama is running (ollama serve)'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/ai/models', methods=['GET'])
+def get_ollama_models():
+    """Get available Ollama models."""
+    import requests
+    
+    try:
+        response = requests.get('http://localhost:11434/api/tags', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            models = [m['name'] for m in data.get('models', [])]
+            return jsonify({'models': models})
+        return jsonify({'models': []})
+    except:
+        return jsonify({'models': [], 'error': 'Ollama not available'})
 
 
 if __name__ == '__main__':

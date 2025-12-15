@@ -318,6 +318,204 @@
             background: #4ade80;
             color: #000;
         }
+        
+        /* AI Assistant Panel */
+        .ai-panel {
+            position: fixed;
+            bottom: 50px;
+            left: 20px;
+            width: 400px;
+            max-height: 500px;
+            background: #16213e;
+            border: 1px solid #e94560;
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .ai-panel.active {
+            display: flex;
+        }
+        
+        .ai-header {
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+            border-radius: 11px 11px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ai-header h3 {
+            margin: 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ai-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            max-height: 300px;
+            min-height: 150px;
+        }
+        
+        .ai-message {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .ai-message.user {
+            background: #0f3460;
+            margin-left: 30px;
+        }
+        
+        .ai-message.assistant {
+            background: #162447;
+            border-left: 3px solid #4ade80;
+            margin-right: 30px;
+        }
+        
+        .ai-message pre {
+            background: #0a0a15;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow-x: auto;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .ai-message pre:hover {
+            background: #1a1a30;
+        }
+        
+        .ai-input-area {
+            padding: 12px;
+            border-top: 1px solid #0f3460;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .ai-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: #0f3460;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 13px;
+        }
+        
+        .ai-input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        
+        .ai-send {
+            padding: 10px 15px;
+            background: #e94560;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .ai-send:hover {
+            background: #ff6b6b;
+        }
+        
+        .ai-send:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        
+        .ai-toggle {
+            position: fixed;
+            bottom: 60px;
+            left: 20px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ai-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5);
+        }
+        
+        .ai-model-select {
+            padding: 5px 8px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: white;
+            font-size: 11px;
+        }
+        
+        .ai-loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #888;
+            font-size: 12px;
+            padding: 10px;
+        }
+        
+        .ai-loading .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #333;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .use-query-btn {
+            margin-top: 5px;
+            padding: 4px 10px;
+            background: #4ade80;
+            border: none;
+            border-radius: 4px;
+            color: #000;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .use-query-btn:hover {
+            background: #22c55e;
+        }
     </style>
 </head>
 <body>
@@ -366,6 +564,37 @@
     </div>
     
     <div id="status" class="status">Ready</div>
+
+    <!-- AI Assistant Panel -->
+    <button class="ai-toggle" onclick="toggleAI()">🤖 AI Assistant</button>
+    
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            🤖 AI Query Assistant
+            <select class="ai-model-select" id="aiModel">
+                <option value="llama3.2">Llama 3.2</option>
+                <option value="mistral">Mistral</option>
+                <option value="codellama">CodeLlama</option>
+                <option value="deepseek-coder">DeepSeek</option>
+            </select>
+        </div>
+        <div class="ai-messages" id="aiMessages">
+            <div class="ai-message assistant">
+                <strong>🤖 AI:</strong> Hello! I can help you build Neo4j Cypher queries. Just describe what you want to find, for example:
+                <ul style="margin:5px 0; padding-left:20px; font-size:11px;">
+                    <li>"Find all classes in the project"</li>
+                    <li>"Show functions that contain a specific word"</li>
+                    <li>"Find files that have many symbols"</li>
+                    <li>"Show relationships between classes and methods"</li>
+                </ul>
+            </div>
+        </div>
+        <div class="ai-input">
+            <input type="text" id="aiInput" placeholder="Describe what you want to find..." 
+                   onkeypress="if(event.key==='Enter')sendAIMessage()">
+            <button class="ai-send" onclick="sendAIMessage()">Send</button>
+        </div>
+    </div>
 
     <script>
         let network = null;
@@ -843,6 +1072,134 @@
         document.getElementById('query').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') runQuery();
         });
+        
+        // ================== AI Assistant Functions ==================
+        
+        let aiPanelOpen = false;
+        
+        function toggleAI() {
+            aiPanelOpen = !aiPanelOpen;
+            const panel = document.getElementById('aiPanel');
+            panel.classList.toggle('open', aiPanelOpen);
+            if (aiPanelOpen) {
+                document.getElementById('aiInput').focus();
+            }
+        }
+        
+        async function sendAIMessage() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const messagesDiv = document.getElementById('aiMessages');
+            const model = document.getElementById('aiModel').value;
+            
+            // Add user message
+            messagesDiv.innerHTML += `
+                <div class="ai-message user">
+                    <strong>You:</strong> ${escapeHtml(message)}
+                </div>
+            `;
+            
+            // Add loading indicator
+            const loadingId = 'loading-' + Date.now();
+            messagesDiv.innerHTML += `
+                <div class="ai-loading" id="${loadingId}">
+                    <div class="spinner"></div>
+                    <span>Thinking...</span>
+                </div>
+            `;
+            
+            // Scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Clear input
+            input.value = '';
+            input.disabled = true;
+            
+            try {
+                const response = await fetch('/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, model })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading
+                document.getElementById(loadingId)?.remove();
+                
+                if (data.error) {
+                    messagesDiv.innerHTML += `
+                        <div class="ai-message assistant" style="border-left-color:#f87171">
+                            <strong>🤖 AI:</strong> <span style="color:#f87171">Error: ${escapeHtml(data.error)}</span>
+                        </div>
+                    `;
+                } else {
+                    // Parse response to extract query
+                    let responseText = data.response || '';
+                    let query = null;
+                    let explanation = responseText;
+                    
+                    // Try to extract Cypher query from response
+                    const cypherMatch = responseText.match(/```(?:cypher|sql)?\s*([\s\S]*?)```/);
+                    if (cypherMatch) {
+                        query = cypherMatch[1].trim();
+                        explanation = responseText.replace(cypherMatch[0], '').trim();
+                    } else {
+                        // Look for MATCH patterns
+                        const matchPattern = responseText.match(/(MATCH\s+[\s\S]*?(?:RETURN|LIMIT)[\s\S]*?)(?:\n\n|\n(?=[A-Z])|$)/i);
+                        if (matchPattern) {
+                            query = matchPattern[1].trim();
+                        }
+                    }
+                    
+                    let responseHtml = `<strong>🤖 AI:</strong> `;
+                    
+                    if (explanation) {
+                        responseHtml += `<p style="margin:5px 0;white-space:pre-wrap">${escapeHtml(explanation)}</p>`;
+                    }
+                    
+                    if (query) {
+                        const queryId = 'query-' + Date.now();
+                        responseHtml += `
+                            <div style="background:#1a1a2e;padding:8px;border-radius:4px;margin:5px 0;font-family:monospace;font-size:11px;white-space:pre-wrap;">
+                                <code id="${queryId}">${escapeHtml(query)}</code>
+                            </div>
+                            <button class="use-query-btn" onclick="useGeneratedQuery('${queryId}')">▶ Use This Query</button>
+                        `;
+                    }
+                    
+                    messagesDiv.innerHTML += `
+                        <div class="ai-message assistant">
+                            ${responseHtml}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById(loadingId)?.remove();
+                messagesDiv.innerHTML += `
+                    <div class="ai-message assistant" style="border-left-color:#f87171">
+                        <strong>🤖 AI:</strong> <span style="color:#f87171">Failed to connect to AI. Make sure Ollama is running on localhost:11434</span>
+                    </div>
+                `;
+            }
+            
+            input.disabled = false;
+            input.focus();
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function useGeneratedQuery(queryId) {
+            const queryElement = document.getElementById(queryId);
+            if (queryElement) {
+                const query = queryElement.textContent;
+                document.getElementById('query').value = query;
+                showStatus('Query loaded! Click "Run Query" to execute.', 'success');
+                // Optionally run the query immediately
+                // runQuery();
+            }
+        }
     </script>
 </body>
 </html>
